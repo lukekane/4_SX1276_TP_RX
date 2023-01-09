@@ -156,10 +156,10 @@ if(isTagValid){
 
 } else {
   Serial.println("Tag is invalid!!!");
-   printHex("Entire Packet", RXBUFFER, RXPacketL);
-   printHex("Tag", tag, TAG_SIZE);
-   printHex("Ciphertext", ciphertext, ctSize);
-   printHex("Plaintext", plaintext, ctSize);
+  //  printHex("Entire Packet", RXBUFFER, RXPacketL);
+  //  printHex("Tag", tag, TAG_SIZE);
+  //  printHex("Ciphertext", ciphertext, ctSize);
+  //  printHex("Plaintext", plaintext, ctSize);
 }
 
 
