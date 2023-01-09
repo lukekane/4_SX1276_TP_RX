@@ -21,6 +21,18 @@
 
 SX127XLT LT;                                     //create a library class instance called LT
 
+ChaChaPoly chachapoly;
+
+byte Key[KEY_SIZE] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                              0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+                              0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                              0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
+
+byte IV[IV_SIZE] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
+
+byte Tag[TAG_SIZE];
+
+
 uint32_t RXpacketCount;
 uint32_t errors;
 
@@ -40,6 +52,54 @@ void sendAck(uint32_t);
 void packet_is_Error();
 void printElapsedTime();
 void led_Flash(uint16_t, uint16_t);
+
+void processPacket(byte buffer[], byte tag[], byte ciphertext[], size_t ctSize);
+void printHex(const char *label, const byte *data, size_t lenOfArray);
+
+
+
+void setup()
+{
+  pinMode(LED1, OUTPUT);                        //setup pin as output for indicator LED
+  led_Flash(2, 125);                            //two quick LED flashes to indicate program start
+
+  Serial.begin(115200);
+  Serial.println();
+  Serial.print(F(__TIME__));
+  Serial.print(F(" "));
+  Serial.println(F(__DATE__));
+  Serial.println(F(Program_Version));
+  Serial.println();
+  Serial.println(F("43_LoRa_Data_Throughput_Acknowledge_Receiver Starting"));
+  Serial.println();
+
+  SPI.begin(SCK, MISO, MOSI, NSS);
+
+  if (LT.begin(NSS, NRESET, DIO0, DIO1, DIO2, LORA_DEVICE))
+  {
+    Serial.println(F("LoRa Device found"));
+    led_Flash(2, 125);
+    delay(1000);
+  }
+  else
+  {
+    Serial.println(F("No device responding"));
+    while (1)
+    {
+      led_Flash(50, 50);                                       //long fast speed LED flash indicates device error
+    }
+  }
+
+  LT.setupLoRa(Frequency, Offset, SpreadingFactor, Bandwidth, CodeRate, Optimisation);
+
+  Serial.println();
+  LT.printModemSettings();                                     //reads and prints the configured LoRa settings, useful check
+  Serial.println();
+  Serial.println();
+
+  Serial.print(F("Receiver ready"));
+  Serial.println();
+}
 
 
 void loop()
@@ -66,13 +126,53 @@ void loop()
 void packet_is_OK()
 {
   RXpacketCount++;
-  Serial.print(RXBUFFER[1]);
+
+//Decryption
+byte tag[TAG_SIZE];
+size_t ctSize = RXPacketL - TAG_SIZE;
+byte ciphertext[ctSize];
+byte plaintext[ctSize];
+
+processPacket(RXBUFFER, tag, ciphertext, ctSize);
+chachapoly.clear();
+chachapoly.setKey(Key, KEY_SIZE);
+chachapoly.setIV(IV, IV_SIZE);
+chachapoly.decrypt(plaintext, ciphertext, ctSize);
+
+bool isTagValid = chachapoly.checkTag(tag, TAG_SIZE);
+
+if(isTagValid){
+  Serial.print(plaintext[1]);
   Serial.print(F(" RX"));
-  packetCheck = ( (uint32_t) RXBUFFER[4] << 24) + ( (uint32_t) RXBUFFER[3] << 16) + ( (uint32_t) RXBUFFER[2] << 8 ) + (uint32_t) RXBUFFER[1];
+  packetCheck = ( (uint32_t) plaintext[4] << 24) + ( (uint32_t) plaintext[3] << 16) + ( (uint32_t) plaintext[2] << 8 ) + (uint32_t) plaintext[1];
   Serial.print(F(",SendACK"));
   sendAck(packetCheck);
+
+  // Serial.println("Tag validated!");
+  // printHex("Entire Packet", RXBUFFER, RXPacketL);
+  //  printHex("Tag", tag, TAG_SIZE);
+  //  printHex("Ciphertext", ciphertext, ctSize);
+  //  printHex("Plaintext", plaintext, ctSize);
+
+} else {
+  Serial.println("Tag is invalid!!!");
+   printHex("Entire Packet", RXBUFFER, RXPacketL);
+   printHex("Tag", tag, TAG_SIZE);
+   printHex("Ciphertext", ciphertext, ctSize);
+   printHex("Plaintext", plaintext, ctSize);
 }
 
+
+}
+
+void processPacket(byte buffer[], byte tag[], byte ciphertext[], size_t ctSize) {
+  for (int i = 0; i < ctSize; i++) {
+    ciphertext[i] = buffer[i];
+  }
+  for (int i = ctSize; i < RXPacketL; i ++) {
+    tag[i - ctSize] = buffer[i];
+  }
+}
 
 void sendAck(uint32_t num)
 {
@@ -134,47 +234,22 @@ void led_Flash(uint16_t flashes, uint16_t delaymS)
   }
 }
 
-
-void setup()
+//Use this to print any array to the console.
+void printHex(const char *label, const byte *data, size_t lenOfArray)
 {
-  pinMode(LED1, OUTPUT);                        //setup pin as output for indicator LED
-  led_Flash(2, 125);                            //two quick LED flashes to indicate program start
-
-  Serial.begin(115200);
-  Serial.println();
-  Serial.print(F(__TIME__));
-  Serial.print(F(" "));
-  Serial.println(F(__DATE__));
-  Serial.println(F(Program_Version));
-  Serial.println();
-  Serial.println(F("43_LoRa_Data_Throughput_Acknowledge_Receiver Starting"));
-  Serial.println();
-
-  SPI.begin(SCK, MISO, MOSI, NSS);
-
-  if (LT.begin(NSS, NRESET, DIO0, DIO1, DIO2, LORA_DEVICE))
+  Serial.println(label);
+  Serial.print("00: ");
+  for (int i = 0; i < lenOfArray; i++)
   {
-    Serial.println(F("LoRa Device found"));
-    led_Flash(2, 125);
-    delay(1000);
-  }
-  else
-  {
-    Serial.println(F("No device responding"));
-    while (1)
+    Serial.print(data[i], HEX);
+    Serial.print(" ");
+    if ((i % 16) == 15)
     {
-      led_Flash(50, 50);                                       //long fast speed LED flash indicates device error
+      Serial.println();
+      Serial.print(i + 1);
+      Serial.print(": ");
     }
   }
-
-  LT.setupLoRa(Frequency, Offset, SpreadingFactor, Bandwidth, CodeRate, Optimisation);
-
   Serial.println();
-  LT.printModemSettings();                                     //reads and prints the configured LoRa settings, useful check
-  Serial.println();
-  Serial.println();
-
-  Serial.print(F("Receiver ready"));
   Serial.println();
 }
-

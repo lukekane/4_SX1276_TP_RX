@@ -1,6 +1,7 @@
 #include <SPI.h>                                 //the lora device is SPI based so load the SPI library
 #include <SX127XLT.h>                            //include the appropriate library   
 #include <ProgramLT_Definitions.h>
+#include <ChaChaPoly.h>
 
 /*******************************************************************************************************
   Programs for Arduino - Copyright of the author Stuart Robinson - 25/03/20
@@ -15,6 +16,14 @@
 //be sure to change the definitions to match your own setup. Some pins such as DIO1,
 //DIO2, BUZZER may not be in used by this sketch so they do not need to be
 //connected and should be set to -1.
+
+//LoRaHAN Definitions
+
+#define KEY_SIZE 32
+#define IV_SIZE 8
+#define TAG_SIZE 16
+#define ADDRESS_SIZE 5
+#define COMMAND_SIZE 5
 
 //Setup Device to work correctly with the LoRa SX1276 Library
 #define NSS 15                                   //select pin on LoRa device
