@@ -51,7 +51,7 @@ void packet_is_OK();
 void sendAck(uint32_t);
 void packet_is_Error();
 void printElapsedTime();
-void led_Flash(uint16_t, uint16_t);
+//void led_Flash(uint16_t, uint16_t);
 
 void processPacket(byte buffer[], byte tag[], byte ciphertext[], size_t ctSize);
 void printHex(const char *label, const byte *data, size_t lenOfArray);
@@ -60,8 +60,8 @@ void printHex(const char *label, const byte *data, size_t lenOfArray);
 
 void setup()
 {
-  pinMode(LED1, OUTPUT);                        //setup pin as output for indicator LED
-  led_Flash(2, 125);                            //two quick LED flashes to indicate program start
+  // pinMode(LED1, OUTPUT);                        //setup pin as output for indicator LED
+  // led_Flash(2, 125);                            //two quick LED flashes to indicate program start
 
   Serial.begin(115200);
   Serial.println();
@@ -78,7 +78,7 @@ void setup()
   if (LT.begin(NSS, NRESET, DIO0, DIO1, DIO2, LORA_DEVICE))
   {
     Serial.println(F("LoRa Device found"));
-    led_Flash(2, 125);
+    //led_Flash(2, 125);
     delay(1000);
   }
   else
@@ -86,7 +86,7 @@ void setup()
     Serial.println(F("No device responding"));
     while (1)
     {
-      led_Flash(50, 50);                                       //long fast speed LED flash indicates device error
+      //led_Flash(50, 50);                                       //long fast speed LED flash indicates device error
     }
   }
 
@@ -106,7 +106,7 @@ void loop()
 {
   RXPacketL = LT.receive(RXBUFFER, 255, 60000, WAIT_RX); //wait for a packet to arrive with 60seconds (60000mS) timeout
 
-  digitalWrite(LED1, HIGH);                      //something has happened
+  //digitalWrite(LED1, HIGH);                      //something has happened
 
   if (RXPacketL == 0)                            //if the LT.receive() function detects an error, RXpacketL is 0
   {
@@ -117,7 +117,7 @@ void loop()
     packet_is_OK();
   }
 
-  digitalWrite(LED1, LOW);                       //LED off
+  //digitalWrite(LED1, LOW);                       //LED off
 
   Serial.println();
 }
@@ -184,9 +184,9 @@ void sendAck(uint32_t num)
   LT.writeUint32(num);                        //send the packet check, bytes 1 to 5 of packet
   len = LT.endWriteSXBuffer();                //close buffer write
 
-  digitalWrite(LED1, HIGH);
+  //digitalWrite(LED1, HIGH);
   TXPacketL = LT.transmitSXBuffer(0, len, 10000, TXpower, WAIT_TX);
-  digitalWrite(LED1, LOW);
+  //digitalWrite(LED1, LOW);
 }
 
 
@@ -221,18 +221,18 @@ void printElapsedTime()
 }
 
 
-void led_Flash(uint16_t flashes, uint16_t delaymS)
-{
-  uint16_t index;
+// void led_Flash(uint16_t flashes, uint16_t delaymS)
+// {
+//   uint16_t index;
 
-  for (index = 1; index <= flashes; index++)
-  {
-    digitalWrite(LED1, HIGH);
-    delay(delaymS);
-    digitalWrite(LED1, LOW);
-    delay(delaymS);
-  }
-}
+//   for (index = 1; index <= flashes; index++)
+//   {
+//     digitalWrite(LED1, HIGH);
+//     delay(delaymS);
+//     digitalWrite(LED1, LOW);
+//     delay(delaymS);
+//   }
+// }
 
 //Use this to print any array to the console.
 void printHex(const char *label, const byte *data, size_t lenOfArray)

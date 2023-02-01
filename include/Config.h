@@ -46,7 +46,7 @@
 //LoRa Modem Parameters
 #define Frequency 915000000                     //frequency of transmissions
 #define Offset 0                                 //offset frequency for calibration purposes  
-#define Bandwidth LORA_BW_125                    //LoRa bandwidth
+#define Bandwidth LORA_BW_500                    //LoRa bandwidth
 #define SpreadingFactor LORA_SF7                 //LoRa spreading factor
 #define CodeRate LORA_CR_4_5                     //LoRa coding rate
 #define Optimisation LDRO_AUTO                   //low data rate optimisation setting, normally set to auto
